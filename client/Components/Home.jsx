@@ -21,23 +21,24 @@ Home = React.createClass({
     createMatch() {
       var cards = Cards.find().fetch();
       Matches.insert({
-        type: 'two player',
-        players: [{userId: Meteor.user()._id , cards: [] , score: 16, turn: true, currentBid: 0, currentTrick: 0 }],
+        type: 2,
+        players: [{userId: Meteor.user()._id , cards: [] , score: 16, turn: false, currentBid: 0,bidMade: false, pickTrump: false, currentTrick: 0, dealer: false,highBidder: false }],
         cards: cards,
         host: Meteor.user()._id,
         usedCards: [],
         fieldCards: [],
-        count: 0,
-        round: 0,
-        trump: 'spades',
-        cardsDealt: false
+        round:  0,
+        trump: 'none',
+        cardsPlayed: 0,
+        cardsDealt: false,
+        dealer: false
       });
     },
 
     joinMatch(e) {
       var matchId = e.currentTarget.id;
       Matches.update(matchId, {
-        $push: {players: {userId: Meteor.user()._id, cards: [], score: 16, turn: false,currentBid:0, currentTrick: 0}}
+        $push: {players: {userId: Meteor.user()._id, cards: [], score: 16, turn: false,currentBid:0, bidMade: false, pickTrump: false, currentTrick: 0, dealer: false, highBidder:false }}
       });
       var url = '/match/' + matchId;
       FlowRouter.go(url);
