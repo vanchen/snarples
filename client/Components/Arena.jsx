@@ -1,3 +1,4 @@
+
 // COMPONENT STYLING
 const playingStyle = {position: 'absolute', width: '40%', height: '40%',top: '42%',left: '27%'};
 const userStyle = {position: 'absolute', width: '100%', height: '30%',top: '70%',left: '0'};
@@ -5,6 +6,8 @@ const scoreStyle = {position: 'absolute', top: '30%', left: '50%', transform: 't
 const trumpStyle = {position: 'absolute', width: '50%', top: '30%', left: '25%'}
 const trumpCard = {position: 'absolute', left: '81%', height: '92%', width: '15%'}
 const cardsStyle = {position: 'absolute', left: '22%', width:'75%'}
+const profileStyle ={position: 'absolute', width: '15%', height: '92%',left: '4%', background: 'white'}
+const player3 = {position: 'absolute', top: '18%', left: '47%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'white'}
 
 
 Arena = React.createClass({
@@ -26,6 +29,7 @@ Arena = React.createClass({
   playCard(e) {
     e.preventDefault();
     var cardId = e.currentTarget.id;
+    var jQueryId = '#' + cardId;
     var match = this.data.match
     var pi = getPlayerIndex(match,Meteor.user()._id)
     if (match.players[pi].turn && match.players[pi].bidMade == true) {
@@ -35,11 +39,13 @@ Arena = React.createClass({
           if (match.fieldCards.length == 0) {
             match.fieldCards.push({card: match.players[pi].cards[j], owner: Meteor.user()._id, leadCard: true})
             match.players[pi].cards.splice(j,1)
+            //$(jQueryId).fadeTo("slow",0);
             break
           }
           else {
             match.fieldCards.push({card: match.players[pi].cards[j], owner: Meteor.user()._id, leadCard: false})
             match.players[pi].cards.splice(j,1)
+            //$(jQueryId).fadeTo("slow",0);
             break
           }
         }
@@ -52,9 +58,9 @@ Arena = React.createClass({
       });
     }
   },
+  //These will have to be refactored....
   bidOne() {
     var match = this.data.match
-    console.log("test")
     var index = getPlayerIndex(match,Meteor.user()._id);
     match.players[index].currentBid = 1;
     match.players[index].bidMade = true;
@@ -103,10 +109,14 @@ Arena = React.createClass({
       $set: {players: match.players}
     });
   },
+
+  //Refactored.....
   pickSpades() {
     var match = this.data.match
     var index = getPlayerIndex(match,Meteor.user()._id);
     match.players[index].pickTrump = false;
+    match.players[index].turn = false;
+    match = changeTurnLeftOfDealer(match)
     Matches.update(match._id,{
       $set : {trump: 'spades', players: match.players}
     });
@@ -116,6 +126,8 @@ Arena = React.createClass({
     var match = this.data.match
     var index = getPlayerIndex(match,Meteor.user()._id);
     match.players[index].pickTrump = false;
+    match.players[index].turn = false;
+    match = changeTurnLeftOfDealer(match)
     Matches.update(match._id,{
       $set : {trump: 'hearts', players: match.players}
     });
@@ -124,6 +136,8 @@ Arena = React.createClass({
     var match = this.data.match
     var index = getPlayerIndex(match,Meteor.user()._id);
     match.players[index].pickTrump = false;
+    match.players[index].turn = false;
+    match = changeTurnLeftOfDealer(match)
     Matches.update(match._id,{
       $set : {trump: 'diamonds', players: match.players}
     });
@@ -132,6 +146,8 @@ Arena = React.createClass({
     var match = this.data.match
     var index = getPlayerIndex(match,Meteor.user()._id);
     match.players[index].pickTrump = false;
+    match.players[index].turn = false;
+    match = changeTurnLeftOfDealer(match)
     Matches.update(match._id,{
       $set : {trump: 'clubs', players: match.players}
     });
@@ -142,25 +158,23 @@ Arena = React.createClass({
   /////////////////////////
 
 
-  profileStyle() {
+  userTurnStyle() {
     var match = this.data.match
     var index = getPlayerIndex(match,Meteor.user()._id)
     if (match.players[index].turn) {
-      return {position: 'absolute', width: '15%', height: '92%',left: '4%', background: 'black'}
+      return {background: 'green'}
     }
     else {
-      return {position: 'absolute', width: '15%', height: '92%',left: '4%', background: 'white'}
+      return {background: 'red'}
     }
   },
 
-  player3() {
-    var match = this.data.match
-    var index = getPlayerIndex(match,Meteor.user()._id)
-    if (match.players[index].turn) {
-      return {position: 'absolute', top: '18%', left: '47%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'white'}
+  playerTurnStyle(player) {
+    if (player.turn) {
+      return {background: 'green'}
     }
     else {
-      return {position: 'absolute', top: '18%', left: '47%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'black'}
+      return {background: 'red'}
     }
   },
 
@@ -239,38 +253,44 @@ Arena = React.createClass({
     return fieldCards.map((card) => {
       var imageSource = "/" + card.card.image;
       return   <Col xs={2} className= "thumbnail">
-            <img className="responsive" src={imageSource}/> </Col>
+          <img className="responsive" src={imageSource}/>
+            </Col>
+
       });
     },
 
 
   renderUserCards() {
-    // NOT WORKING: NEED TO FIX
 
     var cStyle = {width: '12%'}
-    var cStyleDisabled = {width: '12%', opacity:'50%'}
-    var players = this.data.match.players
-    var userCards = [];
-    for (var i=0; i < players.length; i++) {
-      if (players[i].userId == this.data.user._id) {
-        userCards = players[i].cards
-        userTurn = players[i].turn
-        break
-      }
-    }
-    if (this.data.match.fieldCards.length != 0) {
+    var cStyleDisabled = {width: '12%', opacity:'0.5'}
+    var match = this.data.match
+    var index = getPlayerIndex(match,Meteor.user()._id);
+    var userCards = match.players[index].cards
+
+
+    if (match.fieldCards.length > 0) {
       var leadCard = getLeadCard(this.data.match);
       var count = 0;
       for (var i=0; i < userCards.length; i++) {
-        console.log(count)
-        if (userCards[i].suit == leadCard.suit){
+        console.log("Testing render function...")
+        console.log(userCards[i].suit)
+        console.log(leadCard.card.suit)
+        if (userCards[i].suit == leadCard.card.suit){
           count += 1
           console.log(count)
         }
       }
     }
 
-    if (count == 0 || this.data.match.fieldCards.length == 0) {
+    if (match.players[index].turn == false) {
+      return userCards.map((card) => {
+        return   <Col xs={2} className= "thumbnail" style={cStyleDisabled}>
+            <img id={card._id} className="responsive" src={card.image}/> </Col>
+        });
+    }
+
+    if (count == 0 || match.fieldCards.length == 0) {
       return userCards.map((card) => {
         return   <Col xs={2} className= "thumbnail" style={cStyle}>
             <img onClick={this.playCard} id={card._id} className="responsive" src={card.image}/> </Col>
@@ -289,36 +309,22 @@ Arena = React.createClass({
     });
   },
 
-  renderPlayerBidBoxes() {
-    var match = this.data.match;
-    var bids = 0;
-    for (var i=0; i < match.players.length; i++) {
-      if (match.players[i].userId != Meteor.user()._id) {
-        bids = match.players[i].currentBid;
-      }
-    }
-    var bidArray = [{size:10, background: 'white'},{size: 26, background: 'white'},{size:42,background: 'white'},{size:58,background: 'white'},{size:74,background: 'white'}];
-    for (var i=0; i < bids; i++) {
-      bidArray[i].background = 'black';
-    }
-    return bidArray.map((key) => {
-      var left = String(key.size) + '%';
-      var bidBoxStyle = {position: 'absolute', width: '15%', height: '15%', top: '80%', left: left, background: key.background}
-      return <div className= "thumbnail" style={bidBoxStyle}></div>
-      });
-  },
-
   renderBidBoxes() {
     var match = this.data.match;
     var bids = 0;
+    var tricks = 0;
     for (var i=0; i < match.players.length; i++) {
       if (match.players[i].userId == Meteor.user()._id) {
         bids = match.players[i].currentBid;
+        tricks = match.players[i].currentTrick
       }
     }
     var bidArray = [{size:10, background: 'white'},{size: 26, background: 'white'},{size:42,background: 'white'},{size:58,background: 'white'},{size:74,background: 'white'}];
     for (var i=0; i < bids; i++) {
       bidArray[i].background = 'black';
+    }
+    for (var i=0; i < tricks; i++) {
+      bidArray[i].background = 'blue';
     }
     return bidArray.map((key) => {
       var left = String(key.size) + '%';
@@ -348,6 +354,60 @@ Arena = React.createClass({
     },
 
 
+    renderPlayers() {
+      var match = this.data.match;
+
+      var playerStyleArray = [{position: 'absolute', top: '18%', left: '47%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'white'},
+      {position: 'absolute', top: '18%', left: '80%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'white'},
+      {position: 'absolute', top: '50%', left: '90%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'white'},
+      {position: 'absolute', top: '50%', left: '10%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'white'},
+      {position: 'absolute', top: '18%', left: '20%', width: '10%', height: '20%', transform: 'translate(-50%, -50%)', background: 'white'}]
+
+      var playerArray = []
+      var currentPlayerIndex = getPlayerIndex(match, Meteor.user()._id)
+      for (var i = (currentPlayerIndex+1); i < match.players.length; i++) {
+        playerArray.push(match.players[i])
+      }
+      if (playerArray.length < (match.players.length-1)){
+        for (var i =0; i < currentPlayerIndex; i++) {
+          playerArray.push(match.players[i])
+        }
+      }
+      var count = 0;
+
+      return playerArray.map((player) => {
+        var playerStyle = playerStyleArray[count];
+        count +=1;
+        var score = player.score
+        return (
+                <div className="panel panel-success" style={playerStyle}>
+                  <div style={this.playerTurnStyle(player)} className="panel-heading"> </div>
+                  <h1 style={scoreStyle}> {score} </h1>
+                  {this.renderPlayerBidBoxes(player)}
+                </div>
+               )
+        });
+      },
+
+      renderPlayerBidBoxes(player) {
+        var match = this.data.match;
+        var bids = player.currentBid;
+        var tricks = player.currentTrick;
+        var bidArray = [{size:10, background: 'white'},{size: 26, background: 'white'},{size:42,background: 'white'},{size:58,background: 'white'},{size:74,background: 'white'}];
+        for (var i=0; i < bids; i++) {
+          bidArray[i].background = 'black';
+        }
+        for (var i=0; i < tricks; i++) {
+          bidArray[i].background = 'blue';
+        }
+        return bidArray.map((key) => {
+          var left = String(key.size) + '%';
+          var bidBoxStyle = {position: 'absolute', width: '15%', height: '15%', top: '80%', left: left, background: key.background}
+          return <div className= "thumbnail" style={bidBoxStyle}></div>
+          });
+        },
+
+
 
     /////////////////////////
         /* GAME FLOW */
@@ -355,80 +415,55 @@ Arena = React.createClass({
 
   render() {
 
-    // VARIABLES
+
     var match = this.data.match
-    var userTurn = checkIfTurn(match);
-    //
 
-
-    // CONTROL-FLOW #1 //
-    if (!match.dealer && match.players.length == match.type) {
-      var index = getPlayerIndex(match,Meteor.user()._id);
-
-      // CONTROL-FLOW #1: DEAL ONE CARD
-      if (match.players[index].cards.length == 0 && match.fieldCards.length == 0) {
-        var card = getCard(match)
-        match.players[index].cards.push(card.card);
-        match.cards.splice(card.index,1);
-        match.usedCards.push(card.card)
-
-      }
-      //
-
-      // CONTROL-FLOW #1: PLAY CARD
-      //if (userTurn) {
-        if (match.usedCards.length == match.players.length) {
-        match.fieldCards.push({card: match.players[index].cards[0], owner: Meteor.user()._id})
-        match.players[index].cards.splice(0,1)
-        //match = changeTurn(match)
-        //userTurn = match.players[index].turn
-        }
-      //}
-      //
-
-      // CONTROL;FLOW #1: FIND HIGHEST CARD
-      if (match.fieldCards.length == match.players.length) {
-        match.fieldCards = cardSort(match.fieldCards)
-        var dealer = match.fieldCards[0].owner
-        var dealerIndex = getPlayerIndex(match,dealer)
-        match.players[dealerIndex].dealer = true;
-        match.fieldCards = [];
-        match.cards = deckReset(match);
-        match.usedCards = [];
-        match.dealer = true;
-        match = changeTurnLeftOfDealer(match);
-      }
-      //
+    if (!match.dealer && match.players.length == match.totalPlayers) {
+      match = startMatch(match);
     }
-    //
 
-
-
-
-    // CONTROL-FLOW #2 : RUN AFTER DEALER HAS BEEN CHOSEN //
     if (match.dealer) {
       if (match.cardsDealt == false) {
           match = dealCards(match)
+      }
+      if (match.type == 'computer' && bidsComplete(match) == false) {
+        for (var i = 1; i < match.players.length; i++) {
+          match.players[i].currentBid = 2;
+          match.players[i].bidMade = true;
+          match.players[i].turn = false;
         }
+        if (bidsComplete(match) == false) {
+          match.players[0].turn = true;
+        }
+      }
+
+      if (bidsComplete(match) && match.trump == 'none') {
+        match= setTrump(match);
+      }
+
+      if (match.type == 'computer' && match.cardsPlayed < match.players.length) {
+        match = playComputerCard(match)
+      }
+
       if (match.cardsPlayed == match.players.length) {
         match = updateTrick(match)
       }
+
+
       if (match.round == 5) {
         match = updateScore(match);
+        match = changeDealer(match);
+        match = changeTurnLeftOfDealer(match);
         match = dealCards(match);
         match = resetBids(match);
         match.round = 0;
         match.trump = 'none'
       }
-    if (bidsComplete(match) && match.trump == 'none') {
-      match= setTrump(match);
-    }
-  }
-    //
 
-    // CONTROL-FLOW #3 : UPDATE MATCH //
+    }
+
     updateMatch(match)
-    //
+
 
 
     /////////////////////////
@@ -444,14 +479,12 @@ Arena = React.createClass({
         </Row>
       </div>
       {this.renderMakeChoice()}
-      <div className="panel panel-success" style={this.player3()}>
-        <div className="panel-heading"> </div>
-        <h1 style={scoreStyle}> {this.renderPlayerScore()} </h1>
-        {this.renderPlayerBidBoxes()}
-      </div>
+
+      {this.renderPlayers()}
+
       <div style={userStyle}>
-        <div className="user-profile panel panel-info" style={this.profileStyle()}>
-          <div className="panel-heading"> </div>
+        <div className="user-profile panel panel-info" style={profileStyle}>
+          <div style={this.userTurnStyle()}className="panel-heading"> </div>
           <h1 style={scoreStyle}> {this.renderUserScore()} </h1>
           {this.renderBidBoxes()}
           {this.renderIcons()}

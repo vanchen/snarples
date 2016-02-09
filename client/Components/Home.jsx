@@ -18,11 +18,18 @@ Home = React.createClass({
     },
 
 
-    createMatch() {
+    createMatchComputer(event) {
+      console.log(event.target.id)
+      event.preventDefault();
       var cards = Cards.find().fetch();
+      var playerArray = [{userId: Meteor.user()._id , cards: [] , score: 16, turn: false, currentBid: 0,bidMade: false, pickTrump: false, currentTrick: 0, dealer: false,highBidder: false,isComputer: false }]
+      for (var i=1; i < event.target.id; i++) {
+        playerArray.push({userId: 'computer' + i, cards: [] , score: 16, turn: false, currentBid: 0,bidMade: false, pickTrump: false, currentTrick: 0, dealer: false,highBidder: false,isComputer: true })
+      }
       Matches.insert({
-        type: 2,
-        players: [{userId: Meteor.user()._id , cards: [] , score: 16, turn: false, currentBid: 0,bidMade: false, pickTrump: false, currentTrick: 0, dealer: false,highBidder: false }],
+        type: 'computer',
+        totalPlayers: event.target.id,
+        players: playerArray,
         cards: cards,
         host: Meteor.user()._id,
         usedCards: [],
@@ -107,7 +114,22 @@ Home = React.createClass({
         <Tab eventKey={1} title="Profile">
         </Tab>
         <Tab eventKey={2} title="Create">
-          <Button onClick={this.createMatch} bsStyle="primary" bsSize="large" block>Create Game</Button>
+          <Tabs defaultActiveKey={1}>
+            <Tab eventKey={1} title="Single Player">
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="2" bsSize="large" block>Two Player</Button>
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="3" bsSize="large" block>Three Player</Button>
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="4" bsSize="large" block>Four Player</Button>
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="5" bsSize="large" block>Five Player</Button>
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="6" bsSize="large" block>Six Player</Button>
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="7" bsSize="large" block>Seven Player</Button>
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="8" bsSize="large" block>Eight Player</Button>
+          <Button onClick={this.createMatchComputer} bsStyle="primary" id="9" bsSize="large" block>Nine Player</Button>
+          </Tab>
+            <Tab eventKey={2} title="Multiplayer">
+
+
+            </Tab>
+          </Tabs>
         </Tab>
         <Tab eventKey={3} title="Find">
           <div className="list-group">
